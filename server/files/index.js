@@ -89,7 +89,11 @@ function addMovie(imdbID) {
       if (response.status === 201) {
         // Task 2.2: Make sure to remove the added movie from the search results to avoid
         // giving the user the option to add it again.
-    
+        // We find the result entry by its unique ID and remove it from the DOM
+        const searchResultItem = document.getElementById(`result-${imdbID}`);
+        if (searchResultItem) {
+          searchResultItem.remove();
+        }
         loadMovies();
         updateGenres();
       } else if (response.status === 200) {
@@ -136,8 +140,20 @@ function searchMovies(query) {
       // Task 2.2: Render the results returned from the server. Make sure to
       // include an "Add" button for each result that calls `addMovie(imdbID)` when clicked.
       // There is a second part to this task, in `addMovie`
-
-    })
+      if (results.length === 0) {
+        // Inform the user if no results were found
+        new ElementBuilder("p").text(messages.noResultsFound).appendTo(resultsDiv);
+      } else {
+        // Iterate through results and create an entry for each movie
+        results.forEach(movie => {
+          // Create a container with a unique ID for each search result
+          const movieDiv = new ElementBuilder("div").id(`result-${movie.imdbID}`).appendTo(resultsDiv);
+          // Render Title and Year
+          new ElementBuilder("span").text(`${movie.Title} (${movie.Year}) `).appendTo(movieDiv);
+          // Render an Add button that triggers the addMovie function
+          new ElementBuilder("button").text("Add").onclick(() => addMovie(movie.imdbID)).appendTo(movieDiv);
+        });
+      }    })
     .catch(error => {
       console.error('Search failed:', error);
       const resultsDiv = document.getElementById("searchResults");
@@ -168,6 +184,24 @@ window.onload = function () {
       // Task 1.2: Render a user greeting to `#userGreeting` 
       // using `firstName`, `lastName`, and the server-provided
       // login timestamp.
+      // Parse the login time into a Date object
+      const loginDate = new Date(currentSession.loginTime);
+      
+      // Format the date in German style (e.g. 19. April 2026)
+      const dateString = loginDate.toLocaleDateString('de-DE', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      
+      // Format the time in German style (e.g. 21:15)
+      const timeString = loginDate.toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // Set the fully formatted greeting message
+      greetingElement.textContent = `Hi ${currentSession.firstName} ${currentSession.lastName}, du hast dich am ${dateString} um ${timeString} angemeldet.`;
     } else {
       greetingElement.textContent = messages.loggedOutGreeting;
     }
@@ -215,6 +249,40 @@ window.onload = function () {
     // Task 1.1: Implement the login submit flow to call `POST /login` 
     // with username and password, handle errors, save the response 
     // into `currentSession`, then call `updateUI()` and `loadMovies()`.
+    
+    // Extract values from form data
+    const payload = Object.fromEntries(formData.entries());
+    
+    // Send a POST request to the login endpoint
+    fetch("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(response => {
+      // Handle authentication failures or other HTTP errors
+      if (!response.ok) {
+        throw new Error(messages.loginFailed);
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Save session data to the global variable
+      currentSession = data;
+      // Close the login dialog overlay
+      document.getElementById('loginDialog').close();
+      // Update UI components for a logged-in state
+      updateUI();
+      // Load the user's movies
+      loadMovies();
+    })
+    .catch(error => {
+      // Alert the user if the login failed
+      console.error("Login Error:", error);
+      alert(error.message);
+    });
 
   });
 
