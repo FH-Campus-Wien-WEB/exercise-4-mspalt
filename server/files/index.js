@@ -147,11 +147,11 @@ function searchMovies(query) {
         // Iterate through results and create an entry for each movie
         results.forEach(movie => {
           // Create a container with a unique ID for each search result
-          const movieDiv = new ElementBuilder("div").id(`result-${movie.imdbID}`).appendTo(resultsDiv);
+          const movieDiv = new ElementBuilder("div").with("id", `result-${movie.imdbID}`).appendTo(resultsDiv);
           // Render Title and Year
           new ElementBuilder("span").text(`${movie.Title} (${movie.Year}) `).appendTo(movieDiv);
           // Render an Add button that triggers the addMovie function
-          new ElementBuilder("button").text("Add").onclick(() => addMovie(movie.imdbID)).appendTo(movieDiv);
+          new ButtonBuilder("Add").onclick(() => addMovie(movie.imdbID)).appendTo(movieDiv);
         });
       }    })
     .catch(error => {

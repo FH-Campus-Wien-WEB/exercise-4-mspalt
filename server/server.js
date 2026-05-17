@@ -110,10 +110,10 @@ app.put("/movies/:imdbID", requireLogin, function (req, res) {
     // Task 2.3: Fetch the movie data from OmdbAPI, follow the pattern used further down 
     // in the GET /search endpoint. Implement conversion of the OmdbAPI response to the 
     // movie format used in the frontend. Make sure to handle errors and timeouts properly.
-    
+
     // Construct the URL to query OMDb by IMDb ID
     const url = `http://www.omdbapi.com/?i=${encodeURIComponent(imdbID)}&apikey=${config.omdbApiKey}`;
-    
+
     // Setup abort controller for timeout handling
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), config.omdbTimeoutMs);
@@ -141,15 +141,19 @@ app.put("/movies/:imdbID", requireLogin, function (req, res) {
               Title: response.Title,
               Year: response.Year,
               Released: response.Released,
-              Runtime: response.Runtime,
-              // Convert comma-separated Genres to an array of trimmed strings
+              // Extract just the number from "140 min"
+              Runtime: parseInt(response.Runtime) || 0,
+              // Convert comma-separated Strings to arrays of trimmed strings
               Genres: response.Genre ? response.Genre.split(',').map(g => g.trim()) : [],
-              Director: response.Director,
+              Directors: response.Director ? response.Director.split(',').map(d => d.trim()) : [],
+              Writers: response.Writer ? response.Writer.split(',').map(w => w.trim()) : [],
+              Actors: response.Actors ? response.Actors.split(',').map(a => a.trim()) : [],
+              Plot: response.Plot || '',
               Poster: response.Poster,
-              imdbRating: response.imdbRating,
+              imdbRating: parseFloat(response.imdbRating) || 0,
               imdbID: response.imdbID
             };
-            
+
             // Save the new movie into the user's specific collection
             movieModel.setUserMovie(username, imdbID, movieData);
             // Respond with 201 Created to signal successful addition
